@@ -16,7 +16,9 @@ if (!g.RELEASE_VERSION) g.RELEASE_VERSION = pkg.version;
 
 const PORT = parseInt(process.env.PORT || "3000", 10);
 const HOST = process.env.HOST || "0.0.0.0";
-const WEB_DIST = Path.resolve(__dirname, "../../../../out/web");
+const WEB_DIST = fs.existsSync(Path.resolve(__dirname, "index.html"))
+  ? __dirname
+  : Path.resolve(__dirname, "../../../../out/web");
 
 // Default initial project for development/demo (e.g. gbhtml sample or env)
 const defaultProject =
