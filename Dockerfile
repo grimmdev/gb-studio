@@ -15,17 +15,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN corepack enable
 
 # Install build dependencies
-COPY package.json yarn.lock* ./
-RUN yarn install || npm install
+COPY package.json yarn.lock* .yarnrc.yml* ./
+RUN yarn install --immutable
 
 # Copy project source
 COPY . .
 
 # Download GBDK toolchains and engine dependencies
-RUN npm run fetch-toolchains
+RUN yarn fetch-toolchains
 
 # Build the web application and bundled Express server
-RUN npm run make:web
+RUN yarn make:web
 
 # Production runtime stage (minimal Alpine image)
 FROM node:24-alpine
