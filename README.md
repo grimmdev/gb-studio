@@ -113,6 +113,73 @@ Pull the latest code and run make:cli again, yarn link is only needed for the fi
 
   Make a ROM file from gbsproj and print a ROM usage report to stdout
 
+## GB Studio Web (Docker & Self-Hosting)
+
+GB Studio Web provides a full-featured browser-based version of the GB Studio IDE, complete with project editing, ROM building via GBDK, and emulator preview.
+
+Official container images are published to the GitHub Container Registry from [grimmdev/gb-studio-web](https://github.com/grimmdev/gb-studio-web).
+
+### Docker Compose
+
+Create a `docker-compose.yml` file:
+
+```yaml
+services:
+  gb-studio-web:
+    image: ghcr.io/grimmdev/gb-studio-web:latest
+    container_name: gb-studio-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./projects:/data/projects
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+      - PROJECTS_DIR=/data/projects
+```
+
+Start the container:
+
+```bash
+docker compose up -d
+```
+
+Then navigate to `http://localhost:3000` in your web browser. All created projects will persist in the `./projects` folder on your host machine.
+
+### Docker Run
+
+To run directly with Docker CLI:
+
+```bash
+docker run -d \
+  --name gb-studio-web \
+  -p 3000:3000 \
+  -v $(pwd)/projects:/data/projects \
+  --restart unless-stopped \
+  ghcr.io/grimmdev/gb-studio-web:latest
+```
+
+### Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `3000` | HTTP and WebSocket port the server listens on |
+| `HOST` | `0.0.0.0` | Bind host address |
+| `PROJECTS_DIR` | `/data/projects` | Directory path inside the container where projects are stored |
+
+### Building from Source
+
+To build and run the web application locally without Docker:
+
+```bash
+# Build the client and server bundles
+npm run make:web
+
+# Launch the server
+npm run start:web
+```
+
 ## GBS Music
 
 A standalone web application of the music editor is available at https://music.gbstudio.dev/
