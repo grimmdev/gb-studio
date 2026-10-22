@@ -207,9 +207,11 @@ jobs:
           yarn make:web
           mkdir -p ./out/keep
           PACKAGE_DIR="dist/package/gb-studio-web"
-          cp -r out/web "${PACKAGE_DIR}/"
+          mkdir -p "${PACKAGE_DIR}/out"
+          cp -r out/web "${PACKAGE_DIR}/out/"
           cp -r appData "${PACKAGE_DIR}/appData"
           cp -r buildTools "${PACKAGE_DIR}/buildTools"
+          chmod -R +x "${PACKAGE_DIR}/buildTools"
           mkdir -p "${PACKAGE_DIR}/src/lib"
           cp -r src/lib/events "${PACKAGE_DIR}/src/lib/events"
           cp -r src/lang "${PACKAGE_DIR}/src/lang"
