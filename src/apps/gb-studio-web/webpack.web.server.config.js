@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const webpack = require("webpack");
+const fs = require("fs");
 const { appPath, repoPath, srcPath } = require("../shared/webpack.paths");
 const rules = require("../shared/webpack.rules");
 const pkg = require("../../../package.json");
@@ -9,14 +10,16 @@ const isProduction = process.env.NODE_ENV === "production";
 
 let gitVersion = pkg.version;
 let gitCommitHash = "";
-try {
-  const gitRevisionPlugin = new GitRevisionPlugin({
-    commithashCommand: "rev-list --max-count=1 --no-merges --abbrev-commit HEAD",
-  });
-  gitVersion = gitRevisionPlugin.version();
-  gitCommitHash = gitRevisionPlugin.commithash();
-} catch (_e) {
-  // Git metadata unavailable
+if (fs.existsSync(repoPath(".git"))) {
+  try {
+    const gitRevisionPlugin = new GitRevisionPlugin({
+      commithashCommand: "rev-list --max-count=1 --no-merges --abbrev-commit HEAD",
+    });
+    gitVersion = gitRevisionPlugin.version();
+    gitCommitHash = gitRevisionPlugin.commithash();
+  } catch (_e) {
+    // Git metadata unavailable
+  }
 }
 
 const docsUrl = "https://www.gbstudio.dev/docs/";
@@ -53,9 +56,6 @@ module.exports = {
       VERSION: JSON.stringify(pkg.version),
       RELEASE_VERSION: JSON.stringify(pkg.version.replace(/-rc.*/, "")),
       DOCS_URL: JSON.stringify(docsUrl),
-      "process.env.NODE_ENV": JSON.stringify(
-        isProduction ? "production" : "development",
-      ),
     }),
   ],
   ignoreWarnings: [

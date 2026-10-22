@@ -24,6 +24,9 @@ COPY . .
 # Download GBDK toolchains and engine dependencies
 RUN yarn fetch-toolchains
 
+# Set Node memory limit for multi-arch build
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
 # Build the web application and bundled Express server
 RUN yarn make:web
 
