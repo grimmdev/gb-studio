@@ -76,25 +76,25 @@ jobs:
 
           # Add startup script for Linux / macOS
           cat << 'EOF' > "${PACKAGE_DIR}/start.sh"
-#!/bin/sh
-set -e
-PORT=${PORT:-3000}
-HOST=${HOST:-0.0.0.0}
-echo "Starting GB Studio Web on http://${HOST}:${PORT}..."
-bun run src/apps/gb-studio-web/server/index.ts "$@"
-EOF
+          #!/bin/sh
+          set -e
+          PORT=${PORT:-3000}
+          HOST=${HOST:-0.0.0.0}
+          echo "Starting GB Studio Web on http://${HOST}:${PORT}..."
+          bun run src/apps/gb-studio-web/server/index.ts "$@"
+          EOF
           chmod +x "${PACKAGE_DIR}/start.sh"
 
           # Add startup script for Windows
           cat << 'EOF' > "${PACKAGE_DIR}/start.bat"
-@echo off
-set PORT=%PORT%
-if "%PORT%"=="" set PORT=3000
-set HOST=%HOST%
-if "%HOST%"=="" set HOST=0.0.0.0
-echo Starting GB Studio Web on http://%HOST%:%PORT%...
-bun run src/apps/gb-studio-web/server/index.ts %*
-EOF
+          @echo off
+          set PORT=%PORT%
+          if "%PORT%"=="" set PORT=3000
+          set HOST=%HOST%
+          if "%HOST%"=="" set HOST=0.0.0.0
+          echo Starting GB Studio Web on http://%HOST%:%PORT%...
+          bun run src/apps/gb-studio-web/server/index.ts %*
+          EOF
 
           mkdir -p release-assets
           cd dist/package
