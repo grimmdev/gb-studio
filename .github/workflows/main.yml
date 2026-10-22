@@ -50,6 +50,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/beta-') || startsWith(github.ref, 'refs/heads/feat-') || startsWith(github.ref, 'refs/heads/wip-') || startsWith(github.ref, 'refs/heads/fix-') || github.ref == 'refs/heads/gbs-next'
 
+    env:
+      MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+
     strategy:
       matrix:
         include:
@@ -88,11 +91,11 @@ jobs:
         run: corepack enable
 
       - name: Notice macOS build skipped
-        if: startsWith(matrix.name, 'mac') && secrets.MACOS_CERTIFICATE == ''
+        if: startsWith(matrix.name, 'mac') && env.MACOS_CERTIFICATE == ''
         run: echo "::notice ::Skipping macOS build because MACOS_CERTIFICATE secret is not configured."
 
       - name: Setup codesign certificate
-        if: ((matrix.name == 'mac') || (matrix.name == 'mac-intel')) && secrets.MACOS_CERTIFICATE != ''
+        if: ((matrix.name == 'mac') || (matrix.name == 'mac-intel')) && env.MACOS_CERTIFICATE != ''
         env:
           MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
           MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
@@ -105,12 +108,12 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PWD" build.keychain
 
       - name: Install Dependencies
-        if: (!startsWith(matrix.name, 'mac')) || secrets.MACOS_CERTIFICATE != ''
+        if: (!startsWith(matrix.name, 'mac')) || env.MACOS_CERTIFICATE != ''
         run: |
           yarn
 
       - name: Update credits
-        if: ${{ vars.FETCH_CREDITS == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && (!startsWith(matrix.name, 'mac') || secrets.MACOS_CERTIFICATE != '') }}
+        if: ${{ vars.FETCH_CREDITS == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && (!startsWith(matrix.name, 'mac') || env.MACOS_CERTIFICATE != '') }}
         env:
           PATREON_ACCESS_TOKEN: ${{ secrets.PATREON_ACCESS_TOKEN }}
           PATREON_CAMPAIGN_ID: ${{ secrets.PATREON_CAMPAIGN_ID }}
@@ -122,7 +125,7 @@ jobs:
       # ==== Builds ====
 
       - name: Build Mac ARM
-        if: matrix.name == 'mac' && secrets.MACOS_CERTIFICATE != ''
+        if: matrix.name == 'mac' && env.MACOS_CERTIFICATE != ''
         env:
           APPLE_ID: ${{ secrets.MAC_NOTARIZE_ID }}
           APPLE_ID_PASSWORD: ${{ secrets.MAC_NOTARIZE_PWD }}
@@ -137,7 +140,7 @@ jobs:
           mv ./out/make/zip/darwin/arm64/*.zip ./out/keep/gb-studio-${GITHUB_REF##*/}-darwin_arm64.zip
 
       - name: Build Mac Intel
-        if: matrix.name == 'mac-intel' && secrets.MACOS_CERTIFICATE != ''
+        if: matrix.name == 'mac-intel' && env.MACOS_CERTIFICATE != ''
         env:
           APPLE_ID: ${{ secrets.MAC_NOTARIZE_ID }}
           APPLE_ID_PASSWORD: ${{ secrets.MAC_NOTARIZE_PWD }}
@@ -238,7 +241,7 @@ jobs:
           cd ../..
 
       - uses: actions/upload-artifact@v7
-        if: (!startsWith(matrix.name, 'mac')) || secrets.MACOS_CERTIFICATE != ''
+        if: (!startsWith(matrix.name, 'mac')) || env.MACOS_CERTIFICATE != ''
         with:
           name: ${{ matrix.label }} build
           path: |
