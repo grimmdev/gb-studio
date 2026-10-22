@@ -41,6 +41,7 @@
     "flamegraph": "node --prof-process --preprocess -j isolate*.log | flamebearer",
     "analyze-bundle": "cross-env ANALYZE_BUNDLE=1 electron-forge start",
     "fetch-deps": "git submodule update --init --recursive && ts-node --project tsconfig.scripts.json src/scripts/fetchDependencies.ts",
+    "fetch-toolchains": "ts-node --project tsconfig.scripts.json src/scripts/fetchDependencies.ts",
     "fetch-contributors": "ts-node --project tsconfig.scripts.json src/scripts/fetchContributors.ts",
     "fetch-patrons": "ts-node --project tsconfig.scripts.json src/scripts/fetchPatrons.ts",
     "snapshotScriptEventDefs": "cross-env NODE_ENV=test NODE_PATH=src ts-node --project tsconfig.scripts.json src/scripts/snapshotScriptEventDefs.ts",

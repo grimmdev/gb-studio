@@ -22,7 +22,7 @@ RUN yarn install || npm install
 COPY . .
 
 # Download GBDK toolchains and engine dependencies
-RUN npm run fetch-deps
+RUN npm run fetch-toolchains
 
 # Build the web application and bundled Express server
 RUN npm run make:web
