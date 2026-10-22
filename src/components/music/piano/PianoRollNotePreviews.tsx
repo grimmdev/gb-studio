@@ -73,7 +73,7 @@ export const DragPreviewNotes = React.memo(
       (state) => state.tracker.selectedPatternCells,
     );
     const sequenceLength = useAppSelector(
-      (state) => state.trackerDocument.present.song?.sequence.length ?? 0,
+      (state) => state.trackerDocument.present.song?.sequence?.length ?? 0,
     );
 
     const totalAbsRows = sequenceLength * TRACKER_PATTERN_LENGTH;
@@ -158,7 +158,7 @@ export const PastePreviewNotes = () => {
   const pastedPattern = useAppSelector((state) => state.tracker.pastedPattern);
 
   const sequenceLength = useAppSelector(
-    (state) => state.trackerDocument.present.song?.sequence.length ?? 0,
+    (state) => state.trackerDocument.present.song?.sequence?.length ?? 0,
   );
 
   const totalAbsRows = sequenceLength * TRACKER_PATTERN_LENGTH;

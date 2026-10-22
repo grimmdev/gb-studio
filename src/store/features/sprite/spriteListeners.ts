@@ -112,6 +112,9 @@ export const registerSpriteListeners = (startListening: StartAppListening) => {
         spriteData,
         settings.spriteMode,
       );
+      if (!result?.tiles) {
+        return;
+      }
       const numTiles =
         (spriteSheet.spriteMode ?? settings.spriteMode) === "8x16"
           ? result.tiles.length / 2

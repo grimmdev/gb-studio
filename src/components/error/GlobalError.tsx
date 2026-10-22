@@ -100,7 +100,7 @@ const GlobalError = () => {
 
   const { message, filename, line, col, stackTrace } = error;
 
-  const stackTraceLines = error.stackTrace.split("\n");
+  const stackTraceLines = (error.stackTrace || "").split("\n");
 
   const reportIssue = useCallback(() => {
     const owner = "chrismaltby";

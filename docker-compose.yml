@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  gb-studio-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gb-studio-web:latest
+    container_name: gb-studio-web
+    restart: unless-stopped
+    ports:
+      - "3005:3000"
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+      - PROJECTS_DIR=/data/projects
+      - NODE_ENV=production
+    volumes:
+      - gb_studio_projects:/data/projects
+
+volumes:
+  gb_studio_projects:
+    name: gb_studio_projects

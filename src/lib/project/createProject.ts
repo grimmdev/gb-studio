@@ -26,8 +26,12 @@ export const shouldIgnoreTemplatePath =
   };
 
 const createProject = async (options: CreateProjectInput) => {
-  const projectFolderName = stripInvalidFilenameCharacters(options.name);
-  const projectPath = path.join(options.path, projectFolderName);
+  const projectFolderName = stripInvalidFilenameCharacters(options.name || "Untitled");
+  const targetDir =
+    options.path ||
+    process.env.PROJECTS_DIR ||
+    path.join(os.homedir(), "GBStudioProjects");
+  const projectPath = path.join(targetDir, projectFolderName);
   const globalPluginsPath = getGlobalPluginsPath();
   const isPlugin = path.basename(options.template) === "project.gbsproj";
   const templatePath = isPlugin
@@ -37,7 +41,13 @@ const createProject = async (options: CreateProjectInput) => {
   const projectDataPath = `${projectPath}/${projectFolderName}.gbsproj`;
   const templateDataPath = path.join(templatePath, "project.gbsproj");
 
-  const { username } = os.userInfo();
+  const username = (() => {
+    try {
+      return os.userInfo()?.username || "User";
+    } catch {
+      return "User";
+    }
+  })();
 
   if (fs.existsSync(projectPath)) {
     throw ERR_PROJECT_EXISTS;

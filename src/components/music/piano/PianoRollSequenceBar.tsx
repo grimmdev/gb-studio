@@ -130,7 +130,7 @@ export const PianoRollSequenceBar = memo(
       (state) => state.trackerDocument.present.song?.sequence,
     );
     const sequenceLength = useAppSelector(
-      (state) => state.trackerDocument.present.song?.sequence.length ?? 0,
+      (state) => state.trackerDocument.present.song?.sequence?.length ?? 0,
     );
     const numPatterns = useAppSelector((state) =>
       getPatternBlockCount(state.trackerDocument.present.song?.patterns),

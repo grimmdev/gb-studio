@@ -8,10 +8,21 @@ export const isAssetWithinProject = (
   const absoluteParentPath = path.resolve(projectRoot);
   const absoluteChildPath = path.resolve(assetPath);
 
+  if (process.platform === "win32") {
+    const parentLower = absoluteParentPath.toLowerCase();
+    const childLower = absoluteChildPath.toLowerCase();
+    if (parentLower === childLower) {
+      return true;
+    }
+    const relative = path.relative(parentLower, childLower);
+    return !relative.startsWith("..") && !path.isAbsolute(relative);
+  }
+
   if (absoluteParentPath === absoluteChildPath) {
     return true;
   }
-  return absoluteChildPath.startsWith(absoluteParentPath);
+  const relative = path.relative(absoluteParentPath, absoluteChildPath);
+  return !relative.startsWith("..") && !path.isAbsolute(relative);
 };
 
 export const guardAssetWithinProject = (

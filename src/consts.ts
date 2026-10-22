@@ -5,16 +5,28 @@ import {
   Settings,
 } from "shared/lib/resources/types";
 
-const isDist = __dirname.indexOf(".webpack") > -1;
-const isCli = __dirname.indexOf("out/cli") > -1;
+const normalizedDir = __dirname.replace(/\\/g, "/");
+const isDist = normalizedDir.indexOf(".webpack") > -1;
+const isCli = normalizedDir.indexOf("out/cli") > -1;
+const isWeb = normalizedDir.indexOf("out/web") > -1;
 
-let rootDir = __dirname.substring(0, __dirname.lastIndexOf("node_modules"));
-if (isDist) {
-  rootDir = __dirname.substring(0, __dirname.lastIndexOf(".webpack"));
+let rootDir = "";
+if (typeof process !== "undefined" && process.env && process.env.GB_STUDIO_ROOT) {
+  rootDir = process.env.GB_STUDIO_ROOT;
+} else if (isDist) {
+  rootDir = normalizedDir.substring(0, normalizedDir.lastIndexOf(".webpack"));
 } else if (isCli) {
-  rootDir = __dirname.substring(0, __dirname.lastIndexOf("out/cli"));
-} else if (process.env.NODE_ENV === "test") {
+  rootDir = normalizedDir.substring(0, normalizedDir.lastIndexOf("out/cli"));
+} else if (isWeb) {
+  rootDir = normalizedDir.substring(0, normalizedDir.lastIndexOf("out/web"));
+} else if (typeof process !== "undefined" && process.env && process.env.NODE_ENV === "test") {
   rootDir = normalize(`${__dirname}/../`);
+} else if (normalizedDir.lastIndexOf("node_modules") > -1) {
+  rootDir = normalizedDir.substring(0, normalizedDir.lastIndexOf("node_modules"));
+} else if (typeof process !== "undefined" && typeof process.cwd === "function") {
+  rootDir = process.cwd();
+} else {
+  rootDir = "/";
 }
 
 // Paths

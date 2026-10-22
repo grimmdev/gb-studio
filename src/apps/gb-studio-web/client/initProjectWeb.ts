@@ -1,0 +1,446 @@
+import { ActionCreators } from "redux-undo";
+import debounce from "lodash/debounce";
+import store from "store/configureStore";
+import editorActions from "store/features/editor/editorActions";
+import entitiesActions from "store/features/entities/entitiesActions";
+import settingsActions from "store/features/settings/settingsActions";
+import navigationActions from "store/features/navigation/navigationActions";
+import projectActions from "store/features/project/projectActions";
+import buildGameActions from "store/features/buildGame/buildGameActions";
+import clipboardActions from "store/features/clipboard/clipboardActions";
+import engineActions from "store/features/engine/engineActions";
+import scriptEventDefsActions from "store/features/scriptEventDefs/scriptEventDefsActions";
+import errorActions from "store/features/error/errorActions";
+import consoleActions from "store/features/console/consoleActions";
+import debuggerActions from "store/features/debugger/debuggerActions";
+import { clampSidebarWidth } from "renderer/lib/window/sidebar";
+import { initKeyBindings } from "renderer/lib/keybindings/keyBindings";
+import { TRACKER_REDO, TRACKER_UNDO } from "consts";
+import API from "renderer/lib/api";
+import { NavigationSection } from "store/features/navigation/navigationState";
+import { isZoomSection } from "store/features/editor/editorHelpers";
+import trackerActions from "store/features/tracker/trackerActions";
+import { ConsoleLink } from "store/features/console/consoleState";
+import { actions as webTemplatesActions } from "store/features/webTemplates/webTemplatesState";
+
+export const initProjectWeb = async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  let projectPath = urlParams.get("path");
+
+  if (!projectPath) {
+    try {
+      const res = await fetch("/api/projects");
+      if (res.ok) {
+        const data = await res.json();
+        projectPath = data.currentProject;
+      }
+    } catch (e) {
+      console.error("Failed to query /api/projects:", e);
+    }
+  }
+
+  if (projectPath) {
+    try {
+      await fetch("/api/projects/open", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectPath }),
+      });
+    } catch (e) {
+      console.warn("Failed to notify backend of open project:", e);
+    }
+    store.dispatch(projectActions.openProject(projectPath));
+    store.dispatch(trackerActions.initViewFromSaved());
+    initKeyBindings();
+  }
+
+  window.addEventListener("error", (error) => {
+    if (error.message && error.message.indexOf("dead code elimination") > -1) {
+      return true;
+    }
+    error.stopPropagation();
+    error.preventDefault();
+    console.error(error);
+    store.dispatch(
+      errorActions.setGlobalError({
+        message: error.message,
+        filename: error.filename,
+        line: error.lineno,
+        col: error.colno,
+        stackTrace: error.error?.stack,
+      }),
+    );
+    return false;
+  });
+
+  window.addEventListener("unhandledrejection", (error) => {
+    error.stopPropagation();
+    error.preventDefault();
+    console.error(error);
+    store.dispatch(
+      errorActions.setGlobalError({
+        message: error.reason?.message || String(error.reason),
+        filename: "",
+        line: 0,
+        col: 0,
+        stackTrace: error.reason?.stack,
+      }),
+    );
+    return false;
+  });
+
+  const onUndo = () => {
+    if (store.getState().trackerDocument.past.length > 0) {
+      store.dispatch({ type: TRACKER_UNDO });
+    } else {
+      store.dispatch(ActionCreators.undo());
+    }
+  };
+
+  const onRedo = () => {
+    if (store.getState().trackerDocument.future.length > 0) {
+      store.dispatch({ type: TRACKER_REDO });
+    } else {
+      store.dispatch(ActionCreators.redo());
+    }
+  };
+
+  try {
+    const worldSidebarWidth = await API.settings.getNumber("worldSidebarWidth", 0);
+    const filesSidebarWidth = await API.settings.getNumber("filesSidebarWidth", 0);
+    const navigatorSidebarWidth = await API.settings.getNumber("navigatorSidebarWidth", 0);
+
+    if (worldSidebarWidth) {
+      store.dispatch(editorActions.resizeWorldSidebar(clampSidebarWidth(worldSidebarWidth)));
+    }
+    if (filesSidebarWidth) {
+      store.dispatch(editorActions.resizeFilesSidebar(clampSidebarWidth(filesSidebarWidth)));
+    }
+    if (navigatorSidebarWidth) {
+      store.dispatch(editorActions.resizeNavigatorSidebar(navigatorSidebarWidth));
+    }
+  } catch (err) {
+    console.warn("Failed to load initial sidebar sizes", err);
+  }
+
+  window.addEventListener(
+    "resize",
+    debounce(() => {
+      const state = store.getState();
+      store.dispatch(
+        editorActions.resizeWorldSidebar(
+          clampSidebarWidth(state.editor.worldSidebarWidth),
+        ),
+      );
+      store.dispatch(
+        editorActions.resizeFilesSidebar(
+          clampSidebarWidth(state.editor.filesSidebarWidth),
+        ),
+      );
+    }, 500),
+  );
+
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "KeyZ" && (e.ctrlKey || e.metaKey)) {
+      if (e.shiftKey) {
+        e.preventDefault();
+        onRedo();
+      } else {
+        e.preventDefault();
+        onUndo();
+      }
+    }
+  });
+
+  let modified = true;
+  store.subscribe(() => {
+    const state = store.getState();
+    if (!modified && state.document.modified) {
+      API.project.setModified();
+    } else if (modified && !state.document.modified) {
+      API.project.setUnmodified();
+    }
+    modified = state.document.modified;
+  });
+
+  type PendingConsoleItem =
+    | { type: "out"; text: string; link?: ConsoleLink }
+    | { type: "err"; text: string; link?: ConsoleLink };
+
+  let pendingConsoleItems: PendingConsoleItem[] = [];
+  let flushScheduled = false;
+
+  const flushConsoleItems = () => {
+    flushScheduled = false;
+    if (pendingConsoleItems.length === 0) {
+      return;
+    }
+    const items = pendingConsoleItems;
+    pendingConsoleItems = [];
+    store.dispatch(consoleActions.appendMany(items));
+  };
+
+  const scheduleFlush = () => {
+    if (!flushScheduled) {
+      flushScheduled = true;
+      requestAnimationFrame(flushConsoleItems);
+    }
+  };
+
+  API.project.onBuildLog((_event: unknown, message: string) => {
+    pendingConsoleItems.push({ type: "out", text: message });
+    scheduleFlush();
+  });
+
+  API.project.onBuildError((_event: unknown, message: string) => {
+    pendingConsoleItems.push({ type: "err", text: message });
+    scheduleFlush();
+  });
+
+  // Watch Sprites
+  API.events.watch.sprite.changed.subscribe((_, _filename, data) => {
+    store.dispatch(entitiesActions.loadSprite({ data }));
+  });
+
+  API.events.watch.sprite.removed.subscribe((_, filename, plugin) => {
+    store.dispatch(
+      entitiesActions.removedAsset({
+        assetType: "sprites",
+        asset: { filename, plugin },
+      }),
+    );
+  });
+
+  // Watch Backgrounds
+  API.events.watch.background.changed.subscribe((_, _filename, data) => {
+    store.dispatch(entitiesActions.loadBackground({ data }));
+  });
+
+  API.events.watch.background.removed.subscribe((_, filename, plugin) => {
+    store.dispatch(
+      entitiesActions.removedAsset({
+        assetType: "backgrounds",
+        asset: { filename, plugin },
+      }),
+    );
+  });
+
+  // Watch Web Templates
+  API.events.watch.webTemplates.changed.subscribe((_, templates) => {
+    store.dispatch(webTemplatesActions.setWebTemplates(templates));
+  });
+
+  if (projectPath) {
+    API.project
+      .getWebTemplates()
+      .then((templates) => {
+        store.dispatch(webTemplatesActions.setWebTemplates(templates));
+      })
+      .catch(console.error);
+  }
+
+  // Watch Music
+  API.events.watch.music.changed.subscribe((_, _filename, data) => {
+    store.dispatch(entitiesActions.loadMusic({ data }));
+  });
+
+  API.events.watch.music.removed.subscribe((_, filename, plugin) => {
+    store.dispatch(
+      entitiesActions.removedAsset({
+        assetType: "music",
+        asset: { filename, plugin },
+      }),
+    );
+  });
+
+  // Watch Sounds
+  API.events.watch.sound.changed.subscribe((_, _filename, data) => {
+    store.dispatch(entitiesActions.loadSound({ data }));
+  });
+
+  API.events.watch.sound.removed.subscribe((_, filename, plugin) => {
+    store.dispatch(
+      entitiesActions.removedAsset({
+        assetType: "sounds",
+        asset: { filename, plugin },
+      }),
+    );
+  });
+
+  // Watch Fonts
+  API.events.watch.font.changed.subscribe((_, _filename, data) => {
+    store.dispatch(entitiesActions.loadFont({ data }));
+  });
+
+  API.events.watch.font.removed.subscribe((_, filename, plugin) => {
+    store.dispatch(entitiesActions.removeFont({ filename, plugin }));
+  });
+
+  // Watch Avatars
+  API.events.watch.avatar.changed.subscribe((_, _filename, data) => {
+    store.dispatch(entitiesActions.loadAvatar({ data }));
+  });
+
+  API.events.watch.avatar.removed.subscribe((_, filename, plugin) => {
+    store.dispatch(entitiesActions.removeAvatar({ filename, plugin }));
+  });
+
+  // Watch Emotes
+  API.events.watch.emote.changed.subscribe((_, _filename, data) => {
+    store.dispatch(entitiesActions.loadEmote({ data }));
+  });
+
+  API.events.watch.emote.removed.subscribe((_, filename, plugin) => {
+    store.dispatch(entitiesActions.removeEmote({ filename, plugin }));
+  });
+
+  // Watch Tilesets
+  API.events.watch.tileset.changed.subscribe((_, _filename, data) => {
+    store.dispatch(entitiesActions.loadTileset({ data }));
+  });
+
+  API.events.watch.tileset.removed.subscribe((_, filename, plugin) => {
+    store.dispatch(
+      entitiesActions.removedAsset({
+        assetType: "tilesets",
+        asset: { filename, plugin },
+      }),
+    );
+  });
+
+  // Watch UI
+  API.events.watch.ui.changed.subscribe(() => {
+    store.dispatch(projectActions.loadUI());
+  });
+
+  API.events.watch.ui.removed.subscribe(() => {
+    store.dispatch(projectActions.loadUI());
+  });
+
+  // Watch Engine Schema
+  API.events.watch.engineSchema.changed.subscribe((_, engineSchema) => {
+    store.dispatch(engineActions.setEngineSchema(engineSchema));
+  });
+
+  // Script Event Defs
+  API.events.watch.scriptEventDefs.changed.subscribe((_, scriptEventDefs) => {
+    store.dispatch(scriptEventDefsActions.setScriptEventDefs(scriptEventDefs));
+  });
+
+  // Menu
+  API.events.menu.saveProject.subscribe(() => {
+    const state = store.getState();
+    if (!state.document.loaded || state.document.saving) {
+      return;
+    }
+    store.dispatch(projectActions.saveProject());
+  });
+
+  API.events.menu.undo.subscribe(() => onUndo());
+  API.events.menu.redo.subscribe(() => onRedo());
+
+  API.events.menu.setSection.subscribe(async (_, section: NavigationSection) => {
+    store.dispatch(navigationActions.setSection(section));
+  });
+
+  API.events.menu.reloadAssets.subscribe(() => {
+    store.dispatch(projectActions.reloadAssets());
+  });
+
+  API.events.menu.zoom.subscribe((_, zoomType) => {
+    const state = store.getState();
+    const navSection = state.navigation.section;
+    if (isZoomSection(navSection)) {
+      if (zoomType === "in") {
+        store.dispatch(editorActions.zoomIn({ section: navSection }));
+      } else if (zoomType === "out") {
+        store.dispatch(editorActions.zoomOut({ section: navSection }));
+      } else {
+        store.dispatch(editorActions.zoomReset({ section: navSection }));
+      }
+    }
+  });
+
+  API.events.menu.run.subscribe((_, debugEnabled) => {
+    store.dispatch(
+      buildGameActions.buildGame({
+        buildType: "web",
+        exportBuild: false,
+        debugEnabled,
+      }),
+    );
+  });
+
+  API.events.menu.build.subscribe((_, buildType) => {
+    store.dispatch(
+      buildGameActions.buildGame({
+        buildType,
+        exportBuild: true,
+      }),
+    );
+  });
+
+  API.events.menu.ejectEngine.subscribe(() => {
+    store.dispatch(buildGameActions.ejectEngine());
+  });
+
+  API.events.menu.ejectWebTemplate.subscribe(() => {
+    store.dispatch(buildGameActions.ejectWebTemplate());
+  });
+
+  API.events.menu.exportProject.subscribe((_, exportType) => {
+    store.dispatch(buildGameActions.exportProject(exportType));
+  });
+
+  API.events.menu.pasteInPlace.subscribe(() => {
+    store.dispatch(clipboardActions.pasteClipboardEntityInPlace());
+  });
+
+  // Settings changed
+  API.events.settings.uiScaleChanged.subscribe((_, zoomLevel) => {
+    API.app.setZoomLevel(zoomLevel);
+  });
+
+  API.settings.app.getUIScale().then((zoomLevel) => {
+    API.app.setZoomLevel(zoomLevel);
+  });
+
+  API.events.settings.trackerKeyBindingsChanged.subscribe(() => {
+    initKeyBindings();
+  });
+
+  API.events.settings.settingChanged.subscribe((_, key, value) => {
+    store.dispatch(
+      settingsActions.editSettings({
+        [key]: value,
+      }),
+    );
+  });
+
+  // Debugger
+  API.events.debugger.data.subscribe((_, packet) => {
+    switch (packet.action) {
+      case "update-globals": {
+        store.dispatch(
+          debuggerActions.setRAMData({
+            vramPreview: packet.vram,
+            backgroundPreview: packet.background,
+            variablesData: packet.data,
+            scriptContexts: packet.scriptContexts,
+            currentSceneSymbol: packet.currentSceneSymbol,
+            isPaused: packet.isPaused,
+          }),
+        );
+        break;
+      }
+    }
+  });
+
+  API.events.debugger.disconnected.subscribe(() => {
+    store.dispatch(debuggerActions.disconnect());
+  });
+
+  API.events.project.saveProgress.subscribe((_, completed, total) => {
+    store.dispatch(projectActions.setSaveWriteProgress({ completed, total }));
+  });
+};

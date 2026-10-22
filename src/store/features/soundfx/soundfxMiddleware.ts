@@ -29,7 +29,11 @@ window.addEventListener("keydown", initMusic);
 window.addEventListener("blur", pause);
 
 function play(filename: string) {
-  const url = `gbs://app-assets/soundfx/${filename}`;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isWeb = typeof window !== "undefined" && (window as any).API?.env === "web";
+  const url = isWeb
+    ? `/api/assets/app/soundfx/${filename}`
+    : `gbs://app-assets/soundfx/${filename}`;
   fetch(url)
     .then((response) => response.arrayBuffer())
     .then(decodeAudioData)

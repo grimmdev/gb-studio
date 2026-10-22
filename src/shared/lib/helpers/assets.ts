@@ -34,11 +34,14 @@ export const assetFilename = (
 };
 
 export const assetURL = (assetType: AssetType, asset: Asset) => {
-  return `gbs://project/${assetPath(assetType, asset)}?_v=${asset._v}`;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isWeb = typeof window !== "undefined" && (window as any).API?.env === "web";
+  const base = isWeb ? "/api/assets/project" : "gbs://project";
+  return `${base}/${assetPath(assetType, asset)}?_v=${asset._v}`;
 };
 
 export const assetURLStyleProp = (assetType: AssetType, asset: Asset) => {
-  return `url("gbs://project/${assetPath(assetType, asset)}?_v=${asset._v}")`;
+  return `url("${assetURL(assetType, asset)}")`;
 };
 
 export const assetNameFromFilename = (filename: string) => {

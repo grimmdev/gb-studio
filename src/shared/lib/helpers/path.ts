@@ -1,12 +1,16 @@
 import Path from "path";
 
-export const pathToPosix = (filepath: string): string =>
-  filepath.split(Path.sep).join(Path.posix.sep);
+export const pathToPosix = (filepath: string): string => {
+  if (!filepath || typeof filepath !== "string") return "";
+  const sep = Path.sep || "/";
+  const posixSep = (Path.posix && Path.posix.sep) || "/";
+  return filepath.split(sep).join(posixSep);
+};
 
 export const naturalSortPaths = (filepaths: string[]): string[] => {
   return [...filepaths].sort((a, b) => {
-    const splitA = a.split(/[\\/]/);
-    const splitB = b.split(/[\\/]/);
+    const splitA = (a || "").split(/[\\/]/);
+    const splitB = (b || "").split(/[\\/]/);
     const len = Math.min(splitA.length, splitB.length);
     for (let i = 0; i < len; i++) {
       const aPart = splitA[i].replace(/\.[^.]*/, "");

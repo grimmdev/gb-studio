@@ -51,11 +51,15 @@ export const UIAssetPreview = ({ path, onClick }: UIAssetPreviewProps) => {
     return <UIAssetError>Image will be created after next build.</UIAssetError>;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isWeb = typeof window !== "undefined" && (window as any).API?.env === "web";
+  const base = isWeb ? "/api/assets/project" : "gbs://project";
+
   return (
     <UIAssetPreviewButton onError={() => setError(true)} onClick={onClick}>
       <img
         onError={() => console.log("IMG ERROR")}
-        src={`gbs://project/assets/${path}?_v=${uiVersion}`}
+        src={`${base}/assets/${path}?_v=${uiVersion}`}
         alt=""
       />
     </UIAssetPreviewButton>

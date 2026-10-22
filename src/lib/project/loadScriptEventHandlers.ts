@@ -71,7 +71,9 @@ const createFileReaderForHandler = (pluginPath: string): FileReaderFn => {
       return cached;
     }
 
-    const value = readFileSync(absPath, encoding);
+    const value = encoding
+      ? readFileSync(absPath, encoding)
+      : readFileSync(absPath);
     fileCache.set(key, value);
     return value;
   }

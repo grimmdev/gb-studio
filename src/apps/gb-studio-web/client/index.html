@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=contain"
+    />
+    <meta
+      name="description"
+      content="GB Studio Web - A visual retro Game Boy game maker running directly in your browser."
+    />
+    <meta name="theme-color" content="#181820" />
+    <style id="theme"></style>
+    <title>GB Studio Web</title>
+    <script>
+      window.process = window.process || {
+        env: { NODE_ENV: "production" },
+        platform: "browser",
+        browser: true,
+        version: "",
+        cwd: function() { return "/"; },
+        nextTick: function(fn) {
+          var args = Array.prototype.slice.call(arguments, 1);
+          setTimeout(function() { fn.apply(null, args); }, 0);
+        }
+      };
+    </script>
+  </head>
+  <body>
+    <div id="App"></div>
+    <div id="OverlayPortal"></div>
+    <div id="MenuPortal"></div>
+    <script src="./bundle.js"></script>
+  </body>
+</html>

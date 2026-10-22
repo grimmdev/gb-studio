@@ -96,7 +96,7 @@ export const SongTracker = () => {
     (state) => state.trackerDocument.present.song?.sequence,
   );
   const sequenceLength = useAppSelector(
-    (state) => state.trackerDocument.present.song?.sequence.length ?? 0,
+    (state) => state.trackerDocument.present.song?.sequence?.length ?? 0,
   );
   const numPatterns = useAppSelector((state) =>
     getPatternBlockCount(state.trackerDocument.present.song?.patterns),
@@ -177,7 +177,7 @@ export const SongTracker = () => {
   const getMaxField = useCallback(() => {
     const state = store.getState();
     const currentSequenceLength =
-      state.trackerDocument.present.song?.sequence.length ?? 0;
+      state.trackerDocument.present.song?.sequence?.length ?? 0;
     return (
       currentSequenceLength * TRACKER_PATTERN_LENGTH * TRACKER_ROW_SIZE - 1
     );
@@ -471,7 +471,7 @@ export const SongTracker = () => {
       const state = store.getState();
       const { trackerActiveField, trackerSelectionOrigin } = state.tracker;
       const currentSequenceLength =
-        state.trackerDocument.present.song?.sequence.length ?? 0;
+        state.trackerDocument.present.song?.sequence?.length ?? 0;
 
       if (trackerActiveField === undefined || currentSequenceLength <= 0) {
         return false;
@@ -599,7 +599,7 @@ export const SongTracker = () => {
       dispatch(
         trackerDocumentActions.insertSequence({
           sequenceIndex:
-            state.trackerDocument.present.song?.sequence.length ?? 0,
+            state.trackerDocument.present.song?.sequence?.length ?? 0,
           position: "after",
         }),
       );

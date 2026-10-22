@@ -1,4 +1,5 @@
 import Path from "path";
+import fs from "fs";
 import { Worker } from "worker_threads";
 import { BuildTaskResponse, BuildWorkerData } from "./buildWorker";
 import type { BuildWorkerResult } from "./buildResult";
@@ -29,7 +30,14 @@ export const buildRunner = ({
       settled = true;
       resolve(result);
     };
-    const workerPath = Path.resolve(__dirname, "./buildWorker.js");
+    const defaultWorkerPath = Path.resolve(__dirname, "./buildWorker.js");
+    const cliWorkerPath = Path.resolve(process.cwd(), "out/cli/buildWorker.js");
+    const tsWorkerPath = Path.resolve(__dirname, "./buildWorker.ts");
+    const workerPath = fs.existsSync(defaultWorkerPath)
+      ? defaultWorkerPath
+      : fs.existsSync(cliWorkerPath)
+        ? cliWorkerPath
+        : tsWorkerPath;
     const workerData: BuildWorkerData = {
       ...options,
       l10nData: getL10NData(),
