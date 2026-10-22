@@ -207,10 +207,13 @@ jobs:
           yarn make:web
           mkdir -p ./out/keep
           PACKAGE_DIR="dist/package/gb-studio-web"
-          mkdir -p "${PACKAGE_DIR}"
           cp -r out/web "${PACKAGE_DIR}/"
           cp -r appData "${PACKAGE_DIR}/appData"
           cp -r buildTools "${PACKAGE_DIR}/buildTools"
+          mkdir -p "${PACKAGE_DIR}/src/lib"
+          cp -r src/lib/events "${PACKAGE_DIR}/src/lib/events"
+          cp -r src/lang "${PACKAGE_DIR}/src/lang"
+          cp -r src/assets "${PACKAGE_DIR}/src/assets"
           cp package.json README.md "${PACKAGE_DIR}/"
 
           # Add startup script for Linux / macOS
