@@ -3,6 +3,9 @@ FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
+# Ensure essential build tools are present
+RUN apt-get update && apt-get install -y --no-install-recommends git tar ca-certificates && rm -rf /var/lib/apt/lists/*
+
 # Install build dependencies
 COPY package.json bun.lock bunfig.toml ./
 RUN bun install --frozen-lockfile
