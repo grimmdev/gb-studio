@@ -19,6 +19,10 @@ on:
         type: boolean
         default: true
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -33,6 +37,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "24.16.0"
+          cache: "yarn"
 
       - name: Enable Corepack
         run: corepack enable
@@ -64,10 +69,10 @@ jobs:
             os: macos-14
           - name: win32
             label: Windows 32-bit
-            os: ubuntu-latest
+            os: windows-latest
           - name: win64
             label: Windows 64-bit
-            os: ubuntu-latest
+            os: windows-latest
           - name: linux
             label: Linux
             os: ubuntu-latest
@@ -86,6 +91,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "24.16.0"
+          cache: "yarn"
 
       - name: Enable Corepack
         run: corepack enable
@@ -176,29 +182,23 @@ jobs:
 
       - name: Build Win32
         if: matrix.name == 'win32'
+        shell: bash
         run: |
-          sudo dpkg --add-architecture i386
-          sudo apt-get -y update
-          sudo apt-get -y install wine wine64 mono-devel
-          export PATH=$PATH:/usr/lib/wine
           yarn fetch-deps -- --arch=win32-ia32
           yarn make:win32
           mkdir -p ./out/keep
-          mv ./out/make/zip/win32/ia32/*.zip ./out/keep/gb-studio-${CIRCLE_BRANCH}-windows_x86.zip
-          mv ./out/make/squirrel.windows/ia32 ./out/keep/gb-studio-${CIRCLE_BRANCH}-windows_x86-squirrel
+          mv ./out/make/zip/win32/ia32/*.zip ./out/keep/gb-studio-${GITHUB_REF##*/}-windows_x86.zip
+          mv ./out/make/squirrel.windows/ia32 ./out/keep/gb-studio-${GITHUB_REF##*/}-windows_x86-squirrel
 
       - name: Build Win64
         if: matrix.name == 'win64'
+        shell: bash
         run: |
-          sudo dpkg --add-architecture i386
-          sudo apt-get -y update
-          sudo apt-get -y install wine wine64 mono-devel
-          export PATH=$PATH:/usr/lib/wine
           yarn fetch-deps -- --arch=win32-x64
           yarn make:win
           mkdir -p ./out/keep
-          mv ./out/make/zip/win32/x64/*.zip ./out/keep/gb-studio-${CIRCLE_BRANCH}-windows_x86_64.zip
-          mv ./out/make/squirrel.windows/x64 ./out/keep/gb-studio-${CIRCLE_BRANCH}-windows_x86_64-squirrel
+          mv ./out/make/zip/win32/x64/*.zip ./out/keep/gb-studio-${GITHUB_REF##*/}-windows_x86_64.zip
+          mv ./out/make/squirrel.windows/x64 ./out/keep/gb-studio-${GITHUB_REF##*/}-windows_x86_64-squirrel
 
       - name: Build Web
         if: matrix.name == 'web' && (github.event_name != 'workflow_dispatch' || inputs.build_web != false)
