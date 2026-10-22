@@ -27,8 +27,8 @@ RUN npm run fetch-deps
 # Build the web application and bundled Express server
 RUN npm run make:web
 
-# Production runtime stage
-FROM node:24-bookworm-slim
+# Production runtime stage (minimal Alpine image)
+FROM node:24-alpine
 
 WORKDIR /app
 

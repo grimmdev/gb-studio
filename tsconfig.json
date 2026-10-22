@@ -20,7 +20,6 @@
     "noImplicitOverride": true,
     "paths": {
       "*": ["./src/*"],
-      "electron": ["./src/lib/electronShim.ts"],
       "store/*": ["./src/store/*"],
       "lib/*": ["./src/lib/*"],
       "ui/*": ["./src/components/ui/*"],

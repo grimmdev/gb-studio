@@ -93,9 +93,9 @@ const createSubscribeAPI = <T extends (...args: any[]) => void>(channel: string)
 
 const createWatchSubscribeAPI = <T>(channel: string) => {
   return {
-    changed: createSubscribeAPI<(event: unknown, filename: string, data: T) => void>(`${channel}:changed`),
-    renamed: createSubscribeAPI<(event: unknown, oldFilename: string, newFilename: string, plugin: string | undefined) => void>(`${channel}:renamed`),
-    removed: createSubscribeAPI<(event: unknown, filename: string, plugin: string | undefined) => void>(`${channel}:removed`),
+    changed: createSubscribeAPI<(event: any, filename: string, data: T) => void>(`${channel}:changed`),
+    renamed: createSubscribeAPI<(event: any, oldFilename: string, newFilename: string, plugin: string | undefined) => void>(`${channel}:renamed`),
+    removed: createSubscribeAPI<(event: any, filename: string, plugin: string | undefined) => void>(`${channel}:removed`),
   };
 };
 
@@ -391,8 +391,8 @@ export const createWebRendererAPI = (): typeof RendererAPI => {
           body: JSON.stringify(data),
         });
       },
-      setModified: () => {},
-      setUnmodified: () => {},
+      setModified: async () => {},
+      setUnmodified: async () => {},
       renameAsset: async () => true,
       removeAsset: async () => true,
       getWebTemplates: async () => [],
@@ -400,8 +400,8 @@ export const createWebRendererAPI = (): typeof RendererAPI => {
     },
     script: {
       getScriptAutoLabel: () => Promise.resolve(""),
-      scriptEventPostUpdateFn: (_cmd, _fieldKey, args) => Promise.resolve(args),
-      scriptEventUpdateFn: (_cmd, _fieldKey, value) => Promise.resolve(value),
+      scriptEventPostUpdateFn: (_cmd: any, _fieldKey: any, args: any) => Promise.resolve(args),
+      scriptEventUpdateFn: (_cmd: any, _fieldKey: any, value: any) => Promise.resolve(value),
     },
     dataTable: {
       exportCSV: async () => {},
@@ -540,17 +540,17 @@ export const createWebRendererAPI = (): typeof RendererAPI => {
       },
     },
     debugger: {
-      pause: () => sendWs("debugger:pause"),
-      resume: () => sendWs("debugger:resume"),
-      setPauseOnScriptChanged: (enabled) => sendWs("debugger:pause-on-script", enabled),
-      setPauseOnWatchVariableChanged: (enabled) => sendWs("debugger:pause-on-var", enabled),
-      setGlobal: (symbol, value, index) => sendWs("debugger:set-global", { symbol, value, index }),
-      step: () => sendWs("debugger:step"),
-      stepFrame: () => sendWs("debugger:step-frame"),
-      setBreakpoints: (breakpoints) => sendWs("debugger:set-breakpoints", breakpoints),
-      setWatchedVariableIds: (ids) => sendWs("debugger:set-watched", ids),
-      setBackgroundPreviewType: (type) => sendWs("debugger:set-background-preview-type", type),
-      sendToProjectWindow: (data) => sendWs("debugger:data-receive", data),
+      pause: async () => { sendWs("debugger:pause"); },
+      resume: async () => { sendWs("debugger:resume"); },
+      setPauseOnScriptChanged: async (enabled: any) => { sendWs("debugger:pause-on-script", enabled); },
+      setPauseOnWatchVariableChanged: async (enabled: any) => { sendWs("debugger:pause-on-var", enabled); },
+      setGlobal: async (symbol: any, value: any, index: any) => { sendWs("debugger:set-global", { symbol, value, index }); },
+      step: async () => { sendWs("debugger:step"); },
+      stepFrame: async () => { sendWs("debugger:step-frame"); },
+      setBreakpoints: async (breakpoints: any) => { sendWs("debugger:set-breakpoints", breakpoints); },
+      setWatchedVariableIds: async (ids: any) => { sendWs("debugger:set-watched", ids); },
+      setBackgroundPreviewType: async (type: any) => { sendWs("debugger:set-background-preview-type", type); },
+      sendToProjectWindow: async (data: any) => { sendWs("debugger:data-receive", data); },
     },
     pluginManager: {
       getPluginsList: async () => [],
@@ -599,6 +599,14 @@ export const createWebRendererAPI = (): typeof RendererAPI => {
               musicResponseListeners.delete(listener);
             };
           },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          once: (listener: any) => {
+            const wrapped = (...args: any[]) => {
+              musicResponseListeners.delete(wrapped);
+              listener(...args);
+            };
+            musicResponseListeners.add(wrapped);
+          },
         },
       },
       debugger: {
@@ -637,7 +645,7 @@ export const createWebRendererAPI = (): typeof RendererAPI => {
         },
       },
     },
-  };
+  } as unknown as typeof RendererAPI;
 };
 
 export const installWebRendererApi = () => {

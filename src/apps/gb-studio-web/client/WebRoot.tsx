@@ -52,9 +52,11 @@ initMusicPlaybackListener(store.dispatch);
             <ThemeProvider>
               <GlobalStyle />
               <AppContainerDnD>
-                <App />
-                <WebPlayModal />
-                <ProjectPickerModal />
+                <>
+                  <App />
+                  <WebPlayModal />
+                  <ProjectPickerModal />
+                </>
               </AppContainerDnD>
             </ThemeProvider>
           </Provider>

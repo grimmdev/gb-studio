@@ -58,6 +58,18 @@ module.exports = {
       ),
     }),
   ],
+  ignoreWarnings: [
+    {
+      module: /express[\\/]lib[\\/]view\.js/,
+    },
+    {
+      module: /ws[\\/]lib/,
+    },
+  ],
+  externals: {
+    bufferutil: "bufferutil",
+    "utf-8-validate": "utf-8-validate",
+  },
   resolve: {
     extensions: [".js", ".ts", ".jsx", ".tsx", ".css", ".json"],
     alias: {
