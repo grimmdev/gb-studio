@@ -12,6 +12,12 @@ on:
       - fix-*
 
   workflow_dispatch:
+    inputs:
+      build_web:
+        description: 'Build GB Studio Web package'
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -65,6 +71,9 @@ jobs:
           - name: linux-arm64
             label: Linux-arm64
             os: ubuntu-22.04-arm
+          - name: web
+            label: Web
+            os: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v6
@@ -182,6 +191,46 @@ jobs:
           mkdir -p ./out/keep
           mv ./out/make/zip/win32/x64/*.zip ./out/keep/gb-studio-${CIRCLE_BRANCH}-windows_x86_64.zip
           mv ./out/make/squirrel.windows/x64 ./out/keep/gb-studio-${CIRCLE_BRANCH}-windows_x86_64-squirrel
+
+      - name: Build Web
+        if: matrix.name == 'web' && (github.event_name != 'workflow_dispatch' || inputs.build_web != false)
+        run: |
+          yarn fetch-deps -- --all
+          yarn make:web
+          mkdir -p ./out/keep
+          PACKAGE_DIR="dist/package/gb-studio-web"
+          mkdir -p "${PACKAGE_DIR}"
+          cp -r out/web "${PACKAGE_DIR}/"
+          cp -r appData "${PACKAGE_DIR}/appData"
+          cp -r buildTools "${PACKAGE_DIR}/buildTools"
+          cp package.json README.md "${PACKAGE_DIR}/"
+
+          # Add startup script for Linux / macOS
+          cat << 'EOF' > "${PACKAGE_DIR}/start.sh"
+          #!/bin/sh
+          set -e
+          PORT=${PORT:-3000}
+          HOST=${HOST:-0.0.0.0}
+          echo "Starting GB Studio Web on http://${HOST}:${PORT}..."
+          node out/web/server.js "$@"
+          EOF
+          chmod +x "${PACKAGE_DIR}/start.sh"
+
+          # Add startup script for Windows
+          cat << 'EOF' > "${PACKAGE_DIR}/start.bat"
+          @echo off
+          set PORT=%PORT%
+          if "%PORT%"=="" set PORT=3000
+          set HOST=%HOST%
+          if "%HOST%"=="" set HOST=0.0.0.0
+          echo Starting GB Studio Web on http://%HOST%:%PORT%...
+          node out\web\server.js %*
+          EOF
+
+          cd dist/package
+          tar -czf "../../out/keep/gb-studio-${GITHUB_REF##*/}-web.tar.gz" gb-studio-web
+          zip -qr "../../out/keep/gb-studio-${GITHUB_REF##*/}-web.zip" gb-studio-web
+          cd ../..
 
       - uses: actions/upload-artifact@v7
         with:

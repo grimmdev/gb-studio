@@ -1,9 +1,0 @@
-# Bun configuration for GB Studio Web
-[install]
-production = false
-exact = false
-lockfile = true
-
-[run]
-# Automatically load environment variables
-env = true

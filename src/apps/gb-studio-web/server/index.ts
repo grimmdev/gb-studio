@@ -1,8 +1,8 @@
 import http from "http";
 import Path from "path";
 import fs from "fs-extra";
-import mime from "mime";
-import { handleApiRoutes } from "./routes";
+import express from "express";
+import { apiRouter } from "./routes";
 import { initWebSocketServer } from "./ws";
 import { setOpenProject } from "./state";
 import { startWatchingProject } from "./watcher";
@@ -29,71 +29,50 @@ if (fs.existsSync(defaultProject)) {
   startWatchingProject(defaultProject);
 }
 
-const getMimeType = (filePath: string) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const m = mime as any;
-  if (typeof m.getType === "function") return m.getType(filePath);
-  if (typeof m.lookup === "function") return m.lookup(filePath);
-  const ext = Path.extname(filePath).toLowerCase();
-  if (ext === ".png") return "image/png";
-  if (ext === ".jpg" || ext === ".jpeg") return "image/jpeg";
-  if (ext === ".gif") return "image/gif";
-  if (ext === ".html") return "text/html";
-  if (ext === ".js") return "application/javascript";
-  if (ext === ".css") return "text/css";
-  if (ext === ".json") return "application/json";
-  if (ext === ".wasm") return "application/wasm";
-  return "application/octet-stream";
-};
+const app = express();
 
-const server = http.createServer(async (req, res) => {
-  // Handle API routes
-  const handled = await handleApiRoutes(req, res);
-  if (handled) {
+// CORS middleware
+app.use((_req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+  );
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (_req.method === "OPTIONS") {
+    res.sendStatus(204);
     return;
   }
+  next();
+});
 
-  // Static web frontend files
-  const url = new URL(req.url || "/", `http://${req.headers.host}`);
-  let filePath = Path.join(WEB_DIST, decodeURI(url.pathname));
+// JSON body parsing with large limit for game project payloads
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
-  if (await fs.pathExists(filePath)) {
-    const stat = await fs.stat(filePath);
-    if (stat.isDirectory()) {
-      filePath = Path.join(filePath, "index.html");
-    }
-  }
+// Mount API routes under /api
+app.use("/api", apiRouter);
 
-  if (await fs.pathExists(filePath)) {
-    const contentType = getMimeType(filePath) || "application/octet-stream";
-    res.writeHead(200, {
-      "Content-Type": contentType,
-      "Access-Control-Allow-Origin": "*",
-      "Cache-Control": "no-cache, no-store, must-revalidate",
-      Pragma: "no-cache",
-      Expires: "0",
-    });
-    fs.createReadStream(filePath).pipe(res);
-    return;
-  }
+// Serve static frontend assets from out/web
+app.use(
+  express.static(WEB_DIST, {
+    setHeaders: (res) => {
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+    },
+  }),
+);
 
-  // SPA fallback to index.html
+// SPA fallback to index.html or helpful status screen
+app.get("*", async (_req, res) => {
   const indexPath = Path.join(WEB_DIST, "index.html");
   if (await fs.pathExists(indexPath)) {
-    res.writeHead(200, {
-      "Content-Type": "text/html",
-      "Access-Control-Allow-Origin": "*",
-      "Cache-Control": "no-cache, no-store, must-revalidate",
-      Pragma: "no-cache",
-      Expires: "0",
-    });
-    fs.createReadStream(indexPath).pipe(res);
+    res.sendFile(indexPath);
     return;
   }
 
-  // If web frontend has not been compiled yet, show a welcome / status page
-  res.writeHead(200, { "Content-Type": "text/html" });
-  res.end(`<!DOCTYPE html>
+  res.send(`<!DOCTYPE html>
 <html>
   <head>
     <title>GB Studio Web Server</title>
@@ -107,7 +86,7 @@ const server = http.createServer(async (req, res) => {
   <body>
     <div class="card">
       <h1>GB Studio Web API Server</h1>
-      <p>Backend API server is running on <code>http://${HOST}:${PORT}</code>.</p>
+      <p>Node.js & Express server is active on <code>http://${HOST}:${PORT}</code>.</p>
       <p>WebSocket hub is active on <code>ws://${HOST}:${PORT}/ws</code>.</p>
       <p>Active project: <code>${defaultProject}</code></p>
     </div>
@@ -115,9 +94,12 @@ const server = http.createServer(async (req, res) => {
 </html>`);
 });
 
+const server = http.createServer(app);
 initWebSocketServer(server);
 
 server.listen(PORT, HOST, () => {
-  console.log(`🚀 GB Studio Web Server running at http://${HOST}:${PORT}`);
-  console.log(`📡 WebSocket endpoint ready at ws://${HOST}:${PORT}/ws`);
+  console.log(`GB Studio Web Server running at http://${HOST}:${PORT}`);
+  console.log(`WebSocket endpoint ready at ws://${HOST}:${PORT}/ws`);
 });
+
+export { app, server };

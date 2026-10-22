@@ -1,40 +1,53 @@
 # Build stage
-FROM oven/bun:1 AS builder
+FROM node:24-bookworm-slim AS builder
 
 WORKDIR /app
 
 # Ensure essential build tools are present
-RUN apt-get update && apt-get install -y --no-install-recommends git tar ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    tar \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Enable corepack for yarn
+RUN corepack enable
 
 # Install build dependencies
-COPY package.json bun.lock bunfig.toml ./
-RUN bun install --frozen-lockfile
+COPY package.json yarn.lock* ./
+RUN yarn install || npm install
 
 # Copy project source
 COPY . .
 
 # Download GBDK toolchains and engine dependencies
-RUN bun src/scripts/fetchDependencies.ts
+RUN npm run fetch-deps
 
-# Build the web application bundle
-RUN bun run build:web
+# Build the web application and bundled Express server
+RUN npm run make:web
 
 # Production runtime stage
-FROM oven/bun:1-slim
+FROM node:24-bookworm-slim
 
 WORKDIR /app
 
-# Copy built application and tools from builder
-COPY --from=builder /app /app
+# Copy built web application bundle and server
+COPY --from=builder /app/out/web ./out/web
+COPY --from=builder /app/appData ./appData
+COPY --from=builder /app/buildTools ./buildTools
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/README.md ./README.md
 
 # Create volume for persistent project storage
 RUN mkdir -p /data/projects
 ENV PROJECTS_DIR=/data/projects
 ENV PORT=3000
 ENV HOST=0.0.0.0
+ENV NODE_ENV=production
 
 EXPOSE 3000
 
 VOLUME ["/data/projects"]
 
-CMD ["bun", "run", "src/apps/gb-studio-web/server/index.ts"]
+CMD ["node", "out/web/server.js"]
