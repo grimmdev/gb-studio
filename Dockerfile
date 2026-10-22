@@ -1,5 +1,7 @@
-# Build stage
-FROM node:24-bookworm-slim AS builder
+# Build stage runs natively on builder host (avoids slow QEMU CPU emulation for Webpack)
+FROM --platform=$BUILDPLATFORM node:24-bookworm-slim AS builder
+
+ARG TARGETARCH
 
 WORKDIR /app
 
@@ -21,13 +23,19 @@ RUN yarn install --immutable
 # Copy project source
 COPY . .
 
-# Download GBDK toolchains and engine dependencies
-RUN yarn fetch-toolchains
+# Download GBDK toolchains for target architecture (or host arch if TARGETARCH not set)
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+      yarn fetch-toolchains -- --arch=linux-arm64; \
+    elif [ "$TARGETARCH" = "amd64" ]; then \
+      yarn fetch-toolchains -- --arch=linux-x64; \
+    else \
+      yarn fetch-toolchains; \
+    fi
 
 # Set Node memory limit for multi-arch build
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 
-# Build the web application and bundled Express server
+# Build the web application and bundled Express server at native CPU speed
 RUN yarn make:web
 
 # Production runtime stage (minimal Alpine image)
