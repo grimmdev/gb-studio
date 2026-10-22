@@ -1,6 +1,6 @@
 # GB Studio Web
 
-[![Github Actions Status](https://github.com/grimmdev/gb-studio-web/actions/workflows/main.yml/badge.svg?branch=develop)](https://github.com/grimmdev/gb-studio-web/actions?query=branch%3Adevelop) [![Storybook](https://img.shields.io/badge/Storybook-FF4785?logo=storybook&logoColor=white)](https://chrismaltby.github.io/gb-studio/storybook) [![Code Coverage](https://img.shields.io/badge/Coverage-blue?logo=jest&logoColor=white)](https://chrismaltby.github.io/gb-studio/coverage)
+[![Github Actions Status](https://github.com/grimmdev/gb-studio-web/actions/workflows/main.yml/badge.svg?branch=develop)](https://github.com/grimmdev/gb-studio-web/actions?query=branch%3Adevelop) [![Storybook](https://img.shields.io/badge/Storybook-FF4785?logo=storybook&logoColor=white)](https://grimmdev.github.io/gb-studio-web/storybook) [![Code Coverage](https://img.shields.io/badge/Coverage-blue?logo=jest&logoColor=white)](https://grimmdev.github.io/gb-studio-web/coverage)
 
 Copyright (c) 2019-2026 Chris Maltby, released under the [MIT license](https://opensource.org/licenses/MIT).
 
