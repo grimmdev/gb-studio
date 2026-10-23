@@ -22,7 +22,9 @@ const ModalContainer = styled.div`
   background: ${(props) => props.theme.colors.card.background};
   border: 1px solid ${(props) => props.theme.colors.toolbar.border};
   border-radius: ${(props) => props.theme.borderRadius || 4}px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 12px 36px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(0, 0, 0, 0.4);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -132,10 +134,7 @@ export const WebPlayModal: React.FC = () => {
             <Button size="small" onClick={() => setKey((k) => k + 1)}>
               Restart
             </Button>
-            <Button
-              size="small"
-              onClick={() => window.open(playUrl, "_blank")}
-            >
+            <Button size="small" onClick={() => window.open(playUrl, "_blank")}>
               Open in Tab
             </Button>
             <HeaderCloseButton onClick={() => setPlayUrl(null)} title="Close">

@@ -14,8 +14,7 @@ export const app = {
   getPath: (name: string) => {
     if (name === "userData") {
       return (
-        process.env.GB_STUDIO_USER_DATA ||
-        Path.join(os.homedir(), ".gb-studio")
+        process.env.GB_STUDIO_USER_DATA || Path.join(os.homedir(), ".gb-studio")
       );
     }
     if (name === "documents") {
@@ -63,7 +62,8 @@ export const clipboard = {
   writeText: (val: string) => {
     clipboardMemory.text = val;
   },
-  readBuffer: (format: string) => clipboardMemory.buffers.get(format) || Buffer.alloc(0),
+  readBuffer: (format: string) =>
+    clipboardMemory.buffers.get(format) || Buffer.alloc(0),
   writeBuffer: (format: string, buffer: Buffer) => {
     clipboardMemory.buffers.set(format, buffer);
   },

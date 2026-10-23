@@ -52,7 +52,8 @@ export const UIAssetPreview = ({ path, onClick }: UIAssetPreviewProps) => {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const isWeb = typeof window !== "undefined" && (window as any).API?.env === "web";
+  const isWeb =
+    typeof window !== "undefined" && (window as any).API?.env === "web";
   const base = isWeb ? "/api/assets/project" : "gbs://project";
 
   return (

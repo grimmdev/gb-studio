@@ -13,7 +13,8 @@ let gitCommitHash = "";
 if (fs.existsSync(repoPath(".git"))) {
   try {
     const gitRevisionPlugin = new GitRevisionPlugin({
-      commithashCommand: "rev-list --max-count=1 --no-merges --abbrev-commit HEAD",
+      commithashCommand:
+        "rev-list --max-count=1 --no-merges --abbrev-commit HEAD",
     });
     gitVersion = gitRevisionPlugin.version();
     gitCommitHash = gitRevisionPlugin.commithash();

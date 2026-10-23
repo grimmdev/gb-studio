@@ -106,18 +106,33 @@ export const initProjectWeb = async () => {
   };
 
   try {
-    const worldSidebarWidth = await API.settings.getNumber("worldSidebarWidth", 0);
-    const filesSidebarWidth = await API.settings.getNumber("filesSidebarWidth", 0);
-    const navigatorSidebarWidth = await API.settings.getNumber("navigatorSidebarWidth", 0);
+    const worldSidebarWidth = await API.settings.getNumber(
+      "worldSidebarWidth",
+      0,
+    );
+    const filesSidebarWidth = await API.settings.getNumber(
+      "filesSidebarWidth",
+      0,
+    );
+    const navigatorSidebarWidth = await API.settings.getNumber(
+      "navigatorSidebarWidth",
+      0,
+    );
 
     if (worldSidebarWidth) {
-      store.dispatch(editorActions.resizeWorldSidebar(clampSidebarWidth(worldSidebarWidth)));
+      store.dispatch(
+        editorActions.resizeWorldSidebar(clampSidebarWidth(worldSidebarWidth)),
+      );
     }
     if (filesSidebarWidth) {
-      store.dispatch(editorActions.resizeFilesSidebar(clampSidebarWidth(filesSidebarWidth)));
+      store.dispatch(
+        editorActions.resizeFilesSidebar(clampSidebarWidth(filesSidebarWidth)),
+      );
     }
     if (navigatorSidebarWidth) {
-      store.dispatch(editorActions.resizeNavigatorSidebar(navigatorSidebarWidth));
+      store.dispatch(
+        editorActions.resizeNavigatorSidebar(navigatorSidebarWidth),
+      );
     }
   } catch (err) {
     console.warn("Failed to load initial sidebar sizes", err);
@@ -339,9 +354,11 @@ export const initProjectWeb = async () => {
   API.events.menu.undo.subscribe(() => onUndo());
   API.events.menu.redo.subscribe(() => onRedo());
 
-  API.events.menu.setSection.subscribe(async (_, section: NavigationSection) => {
-    store.dispatch(navigationActions.setSection(section));
-  });
+  API.events.menu.setSection.subscribe(
+    async (_, section: NavigationSection) => {
+      store.dispatch(navigationActions.setSection(section));
+    },
+  );
 
   API.events.menu.reloadAssets.subscribe(() => {
     store.dispatch(projectActions.reloadAssets());

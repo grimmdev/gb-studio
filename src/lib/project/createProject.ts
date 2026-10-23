@@ -26,7 +26,9 @@ export const shouldIgnoreTemplatePath =
   };
 
 const createProject = async (options: CreateProjectInput) => {
-  const projectFolderName = stripInvalidFilenameCharacters(options.name || "Untitled");
+  const projectFolderName = stripInvalidFilenameCharacters(
+    options.name || "Untitled",
+  );
   const targetDir =
     options.path ||
     process.env.PROJECTS_DIR ||

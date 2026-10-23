@@ -23,7 +23,9 @@ const ModalContainer = styled.div`
   background: ${(props) => props.theme.colors.card.background};
   border: 1px solid ${(props) => props.theme.colors.toolbar.border};
   border-radius: ${(props) => props.theme.borderRadius || 4}px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 12px 36px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(0, 0, 0, 0.4);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -145,9 +147,7 @@ const ProjectInfo = styled.div`
 
 const ProjectName = styled.span<{ active?: boolean }>`
   color: ${(props) =>
-    props.active
-      ? props.theme.colors.highlightText
-      : props.theme.colors.text};
+    props.active ? props.theme.colors.highlightText : props.theme.colors.text};
   font-weight: 600;
   font-size: 12px;
 `;
@@ -227,7 +227,9 @@ export const ProjectPickerModal: React.FC = () => {
     if (res.ok) {
       window.location.search = `?path=${encodeURIComponent(path)}`;
     } else {
-      const err = await res.json().catch(() => ({ error: "Failed to open project" }));
+      const err = await res
+        .json()
+        .catch(() => ({ error: "Failed to open project" }));
       setErrorMsg(err.error || "Failed to open project");
     }
   };
@@ -251,7 +253,9 @@ export const ProjectPickerModal: React.FC = () => {
         const result = await res.json();
         window.location.search = `?path=${encodeURIComponent(result.projectPath)}`;
       } else {
-        const err = await res.json().catch(() => ({ error: "Failed to create project" }));
+        const err = await res
+          .json()
+          .catch(() => ({ error: "Failed to create project" }));
         setErrorMsg(err.error || "Failed to create project");
       }
     } catch (e: any) {

@@ -98,9 +98,18 @@ const getUserProjectsDir = () =>
 apiRouter.get("/projects", async (_req: Request, res: Response) => {
   const userProjectsDir = getUserProjectsDir();
   const templates = [
-    { name: "Blank Project", path: Path.join(projectTemplatesRoot, "blank", "project.gbsproj") },
-    { name: "GB HTML Sample", path: Path.join(projectTemplatesRoot, "gbhtml", "project.gbsproj") },
-    { name: "GBS2 Sample", path: Path.join(projectTemplatesRoot, "gbs2", "project.gbsproj") },
+    {
+      name: "Blank Project",
+      path: Path.join(projectTemplatesRoot, "blank", "project.gbsproj"),
+    },
+    {
+      name: "GB HTML Sample",
+      path: Path.join(projectTemplatesRoot, "gbhtml", "project.gbsproj"),
+    },
+    {
+      name: "GBS2 Sample",
+      path: Path.join(projectTemplatesRoot, "gbs2", "project.gbsproj"),
+    },
   ];
 
   const userProjects: { name: string; path: string }[] = [];
@@ -164,7 +173,9 @@ apiRouter.get("/projects/load", async (req: Request, res: Response) => {
     const data = await loadProjectData(serverState.projectPath);
     res.json(data);
   } catch (err: unknown) {
-    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    res
+      .status(500)
+      .json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 
@@ -174,10 +185,14 @@ apiRouter.get("/projects/checksums", async (_req: Request, res: Response) => {
     return;
   }
   try {
-    const checksums = await loadProjectResourceChecksums(serverState.projectPath);
+    const checksums = await loadProjectResourceChecksums(
+      serverState.projectPath,
+    );
     res.json(checksums);
   } catch (err: unknown) {
-    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    res
+      .status(500)
+      .json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 
@@ -196,7 +211,9 @@ apiRouter.post("/projects/save", async (req: Request, res: Response) => {
     res.json({ success: true });
   } catch (err: unknown) {
     console.error("Save project error:", err);
-    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    res
+      .status(500)
+      .json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 
@@ -213,7 +230,9 @@ apiRouter.post("/projects/create", async (req: Request, res: Response) => {
     res.json({ success: true, projectPath });
   } catch (err: unknown) {
     console.error("Create project error:", err);
-    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    res
+      .status(500)
+      .json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 
@@ -272,63 +291,80 @@ apiRouter.post("/projects/build", async (req: Request, res: Response) => {
   } catch (err: unknown) {
     console.error("Build project error:", err);
     broadcast("build:error", err instanceof Error ? err.message : String(err));
-    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    res
+      .status(500)
+      .json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 
-apiRouter.post("/projects/background-info", async (req: Request, res: Response) => {
-  try {
-    const body = req.body || {};
-    const info = await getBackgroundInfo(
-      body.background,
-      body.tileset,
-      body.is360,
-      body.uiPalette,
-      body.colorMode,
-      body.colorCorrection,
-      body.autoTileFlipEnabled,
-      serverState.projectRoot,
-    );
-    res.json(info);
-  } catch (err: unknown) {
-    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
-  }
-});
+apiRouter.post(
+  "/projects/background-info",
+  async (req: Request, res: Response) => {
+    try {
+      const body = req.body || {};
+      const info = await getBackgroundInfo(
+        body.background,
+        body.tileset,
+        body.is360,
+        body.uiPalette,
+        body.colorMode,
+        body.colorCorrection,
+        body.autoTileFlipEnabled,
+        serverState.projectRoot,
+      );
+      res.json(info);
+    } catch (err: unknown) {
+      res
+        .status(500)
+        .json({ error: err instanceof Error ? err.message : String(err) });
+    }
+  },
+);
 
-apiRouter.post("/projects/scene-tilemap-info", async (req: Request, res: Response) => {
-  try {
-    const body = req.body || {};
-    const info = await getSceneTilemapInfo(
-      body.scene,
-      body.tilesets,
-      body.colorMode,
-      body.autoTileFlipEnabled,
-      serverState.projectRoot,
-    );
-    res.json(info);
-  } catch (err: unknown) {
-    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
-  }
-});
+apiRouter.post(
+  "/projects/scene-tilemap-info",
+  async (req: Request, res: Response) => {
+    try {
+      const body = req.body || {};
+      const info = await getSceneTilemapInfo(
+        body.scene,
+        body.tilesets,
+        body.colorMode,
+        body.autoTileFlipEnabled,
+        serverState.projectRoot,
+      );
+      res.json(info);
+    } catch (err: unknown) {
+      res
+        .status(500)
+        .json({ error: err instanceof Error ? err.message : String(err) });
+    }
+  },
+);
 
-apiRouter.post("/projects/sprite-compile", async (req: Request, res: Response) => {
-  try {
-    const body = req.body || {};
-    const projectRoot = serverState.projectRoot;
-    const filename = assetFilename(projectRoot, "sprites", body.spriteData);
-    guardAssetWithinProject(filename, projectRoot);
-    const result = await compileSprite(
-      { ...body.spriteData, colorMode: "mixed" },
-      false,
-      projectRoot,
-      body.defaultSpriteMode,
-    );
-    res.json(result);
-  } catch (err: unknown) {
-    console.error("Sprite compile error:", err);
-    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
-  }
-});
+apiRouter.post(
+  "/projects/sprite-compile",
+  async (req: Request, res: Response) => {
+    try {
+      const body = req.body || {};
+      const projectRoot = serverState.projectRoot;
+      const filename = assetFilename(projectRoot, "sprites", body.spriteData);
+      guardAssetWithinProject(filename, projectRoot);
+      const result = await compileSprite(
+        { ...body.spriteData, colorMode: "mixed" },
+        false,
+        projectRoot,
+        body.defaultSpriteMode,
+      );
+      res.json(result);
+    } catch (err: unknown) {
+      console.error("Sprite compile error:", err);
+      res
+        .status(500)
+        .json({ error: err instanceof Error ? err.message : String(err) });
+    }
+  },
+);
 
 // --- Tracker Endpoints ---
 apiRouter.post("/tracker/load", async (req: Request, res: Response) => {
@@ -344,7 +380,9 @@ apiRouter.post("/tracker/load", async (req: Request, res: Response) => {
     }
     res.json(song);
   } catch (err: unknown) {
-    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    res
+      .status(500)
+      .json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 
@@ -358,7 +396,9 @@ apiRouter.post("/tracker/save", async (req: Request, res: Response) => {
     await writeFileWithBackupAsync(filename, data);
     res.json({ success: true });
   } catch (err: unknown) {
-    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    res
+      .status(500)
+      .json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 
@@ -398,7 +438,9 @@ apiRouter.post("/tracker/new", async (req: Request, res: Response) => {
     const result = await copy2(templatePath, filename);
     res.json(result);
   } catch (err: unknown) {
-    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    res
+      .status(500)
+      .json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 
@@ -421,7 +463,9 @@ apiRouter.post("/tracker/convert-mod", async (req: Request, res: Response) => {
     const resourceData = await loadMusicData(projectRoot)(newFilename);
     res.json(resourceData);
   } catch (err: unknown) {
-    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    res
+      .status(500)
+      .json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 
@@ -430,7 +474,9 @@ apiRouter.get("/templates", (_req: Request, res: Response) => {
     const templates = templateManager.getPluginTemplates();
     res.json(templates);
   } catch (err: unknown) {
-    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    res
+      .status(500)
+      .json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 

@@ -30,7 +30,8 @@ window.addEventListener("blur", pause);
 
 function play(filename: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const isWeb = typeof window !== "undefined" && (window as any).API?.env === "web";
+  const isWeb =
+    typeof window !== "undefined" && (window as any).API?.env === "web";
   const url = isWeb
     ? `/api/assets/app/soundfx/${filename}`
     : `gbs://app-assets/soundfx/${filename}`;

@@ -37,7 +37,11 @@ let socket: WebSocket | null = null;
 let reconnectTimer: NodeJS.Timeout | null = null;
 
 export const connectWebSocket = () => {
-  if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+  if (
+    socket &&
+    (socket.readyState === WebSocket.OPEN ||
+      socket.readyState === WebSocket.CONNECTING)
+  ) {
     return;
   }
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -77,7 +81,9 @@ const sendWs = (channel: string, ...args: unknown[]) => {
   }
 };
 
-const createSubscribeAPI = <T extends (...args: any[]) => void>(channel: string) => {
+const createSubscribeAPI = <T extends (...args: any[]) => void>(
+  channel: string,
+) => {
   return {
     subscribe: (listener: T) => {
       return eventBus.on(channel, listener);
@@ -93,9 +99,20 @@ const createSubscribeAPI = <T extends (...args: any[]) => void>(channel: string)
 
 const createWatchSubscribeAPI = <T>(channel: string) => {
   return {
-    changed: createSubscribeAPI<(event: any, filename: string, data: T) => void>(`${channel}:changed`),
-    renamed: createSubscribeAPI<(event: any, oldFilename: string, newFilename: string, plugin: string | undefined) => void>(`${channel}:renamed`),
-    removed: createSubscribeAPI<(event: any, filename: string, plugin: string | undefined) => void>(`${channel}:removed`),
+    changed: createSubscribeAPI<
+      (event: any, filename: string, data: T) => void
+    >(`${channel}:changed`),
+    renamed: createSubscribeAPI<
+      (
+        event: any,
+        oldFilename: string,
+        newFilename: string,
+        plugin: string | undefined,
+      ) => void
+    >(`${channel}:renamed`),
+    removed: createSubscribeAPI<
+      (event: any, filename: string, plugin: string | undefined) => void
+    >(`${channel}:removed`),
   };
 };
 
@@ -153,7 +170,9 @@ const ensureMusicSession = async () => {
         const session = module.default();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         session.subscribe((data: any) => {
-          musicResponseListeners.forEach((listener) => listener(undefined, data));
+          musicResponseListeners.forEach((listener) =>
+            listener(undefined, data),
+          );
         });
         return session;
       },
@@ -188,10 +207,17 @@ export const createWebRendererAPI = (): typeof RendererAPI => {
       },
       openModFile: (_path: string) => Promise.resolve(),
       openFile: (_path: string) => Promise.resolve(),
-      getIsFullScreen: () => Promise.resolve(Boolean(document.fullscreenElement)),
+      getIsFullScreen: () =>
+        Promise.resolve(Boolean(document.fullscreenElement)),
       deleteBuildCache: () => Promise.resolve(),
       setZoomLevel: () => {},
-      getPatrons: () => Promise.resolve({ patrons: [], silverPatrons: [], goldPatrons: [], platinumPatrons: [] } as any),
+      getPatrons: () =>
+        Promise.resolve({
+          patrons: [],
+          silverPatrons: [],
+          goldPatrons: [],
+          platinumPatrons: [],
+        } as any),
       showProjectWindow: () => Promise.resolve(),
     },
     l10n: {
@@ -400,8 +426,10 @@ export const createWebRendererAPI = (): typeof RendererAPI => {
     },
     script: {
       getScriptAutoLabel: () => Promise.resolve(""),
-      scriptEventPostUpdateFn: (_cmd: any, _fieldKey: any, args: any) => Promise.resolve(args),
-      scriptEventUpdateFn: (_cmd: any, _fieldKey: any, value: any) => Promise.resolve(value),
+      scriptEventPostUpdateFn: (_cmd: any, _fieldKey: any, args: any) =>
+        Promise.resolve(args),
+      scriptEventUpdateFn: (_cmd: any, _fieldKey: any, value: any) =>
+        Promise.resolve(value),
     },
     dataTable: {
       exportCSV: async () => {},
@@ -424,7 +452,8 @@ export const createWebRendererAPI = (): typeof RendererAPI => {
         musicResponseListeners.forEach((listener) => listener(undefined, data));
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      updateMidiInputMenuState: (state: any) => sendWs("music:midi-menu-state", state),
+      updateMidiInputMenuState: (state: any) =>
+        sendWs("music:midi-menu-state", state),
       playUGE: async () => {},
       playMOD: async () => {},
     },
@@ -540,17 +569,39 @@ export const createWebRendererAPI = (): typeof RendererAPI => {
       },
     },
     debugger: {
-      pause: async () => { sendWs("debugger:pause"); },
-      resume: async () => { sendWs("debugger:resume"); },
-      setPauseOnScriptChanged: async (enabled: any) => { sendWs("debugger:pause-on-script", enabled); },
-      setPauseOnWatchVariableChanged: async (enabled: any) => { sendWs("debugger:pause-on-var", enabled); },
-      setGlobal: async (symbol: any, value: any, index: any) => { sendWs("debugger:set-global", { symbol, value, index }); },
-      step: async () => { sendWs("debugger:step"); },
-      stepFrame: async () => { sendWs("debugger:step-frame"); },
-      setBreakpoints: async (breakpoints: any) => { sendWs("debugger:set-breakpoints", breakpoints); },
-      setWatchedVariableIds: async (ids: any) => { sendWs("debugger:set-watched", ids); },
-      setBackgroundPreviewType: async (type: any) => { sendWs("debugger:set-background-preview-type", type); },
-      sendToProjectWindow: async (data: any) => { sendWs("debugger:data-receive", data); },
+      pause: async () => {
+        sendWs("debugger:pause");
+      },
+      resume: async () => {
+        sendWs("debugger:resume");
+      },
+      setPauseOnScriptChanged: async (enabled: any) => {
+        sendWs("debugger:pause-on-script", enabled);
+      },
+      setPauseOnWatchVariableChanged: async (enabled: any) => {
+        sendWs("debugger:pause-on-var", enabled);
+      },
+      setGlobal: async (symbol: any, value: any, index: any) => {
+        sendWs("debugger:set-global", { symbol, value, index });
+      },
+      step: async () => {
+        sendWs("debugger:step");
+      },
+      stepFrame: async () => {
+        sendWs("debugger:step-frame");
+      },
+      setBreakpoints: async (breakpoints: any) => {
+        sendWs("debugger:set-breakpoints", breakpoints);
+      },
+      setWatchedVariableIds: async (ids: any) => {
+        sendWs("debugger:set-watched", ids);
+      },
+      setBackgroundPreviewType: async (type: any) => {
+        sendWs("debugger:set-background-preview-type", type);
+      },
+      sendToProjectWindow: async (data: any) => {
+        sendWs("debugger:data-receive", data);
+      },
     },
     pluginManager: {
       getPluginsList: async () => [],
@@ -565,7 +616,9 @@ export const createWebRendererAPI = (): typeof RendererAPI => {
       menu: {
         saveProject: createSubscribeAPI("menu:save-project"),
         saveProjectAs: createSubscribeAPI("menu:save-project-as"),
-        onSaveAndCloseProject: createSubscribeAPI("menu:save-project-and-close"),
+        onSaveAndCloseProject: createSubscribeAPI(
+          "menu:save-project-and-close",
+        ),
         undo: createSubscribeAPI("menu:undo"),
         redo: createSubscribeAPI("menu:redo"),
         pasteInPlace: createSubscribeAPI("menu:paste-in-place"),
@@ -618,7 +671,9 @@ export const createWebRendererAPI = (): typeof RendererAPI => {
       },
       settings: {
         uiScaleChanged: createSubscribeAPI("setting:ui-scale:changed"),
-        trackerKeyBindingsChanged: createSubscribeAPI("setting:tracker-keybindings:changed"),
+        trackerKeyBindingsChanged: createSubscribeAPI(
+          "setting:tracker-keybindings:changed",
+        ),
         settingChanged: createSubscribeAPI("setting:changed"),
       },
       templates: {
